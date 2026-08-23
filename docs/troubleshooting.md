@@ -48,6 +48,40 @@ minutes, confirm the target group's health check path (`/health`) and
 port (8080) match the app, and that the `ecs_from_alb` security group
 rule actually applied.
 
+### `terraform destroy` fails: "RepositoryNotEmptyException"
+**Cause:** AWS's ECR API refuses to delete a repository that still
+contains images, regardless of what Terraform is trying to do —
+unless the `aws_ecr_repository` resource has `force_delete = true` set
+(this project's `ecr` module doesn't, since accidentally
+force-deleting a repo full of real images is a worse default than
+requiring an explicit, deliberate step). Every other resource in the
+project destroyed successfully; only this one blocked.
+**Fix:** manually clear the repository's images first, then re-run
+`terraform destroy`:
+```bash
+aws ecr list-images --repository-name ecs-guestbook-app --profile cloud-resume --query "imageIds" --output json
+aws ecr batch-delete-image --repository-name ecs-guestbook-app --profile cloud-resume --image-ids imageDigest=sha256:...  imageDigest=sha256:...
+```
+Then `terraform destroy` again — it'll pick up right where it left
+off and finish cleanly.
+
+### `terraform destroy` fails: "RepositoryNotEmptyException"
+**Cause:** AWS's ECR API refuses to delete a repository that still
+contains images, regardless of what Terraform is trying to do —
+unless the `aws_ecr_repository` resource has `force_delete = true` set
+(this project's `ecr` module doesn't, since accidentally
+force-deleting a repo full of real images is a worse default than
+requiring an explicit, deliberate step). Every other resource in the
+project destroyed successfully; only this one blocked.
+**Fix:** manually clear the repository's images first, then re-run
+`terraform destroy`:
+```bash
+aws ecr list-images --repository-name ecs-guestbook-app --profile cloud-resume --query "imageIds" --output json
+aws ecr batch-delete-image --repository-name ecs-guestbook-app --profile cloud-resume --image-ids imageDigest=sha256:...  imageDigest=sha256:...
+```
+Then `terraform destroy` again — it'll pick up right where it left
+off and finish cleanly.
+
 ---
 
 *(Further refinements will be added as they come up.)*
