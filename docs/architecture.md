@@ -71,6 +71,36 @@ redeploy after each push, rather than updating the task definition
 each time. Less machinery, a real tradeoff worth naming directly if
 asked — not the "best" answer, but an honest, deliberate one.
 
+### Load balancer module intentionally knows nothing about ECS
+Connecting the ECS service to the target group needs the target
+group's ARN inside the service's required `load_balancer` block —
+there's no separate "attachment" resource for this the way project 2
+used `aws_autoscaling_attachment` to solve the same category of
+problem for an Auto Scaling Group. Since that inline block can't be
+avoided, the only way to prevent a circular dependency between the
+two modules is to make the dependency strictly one-directional: the
+load-balancer module takes no input from the ecs module at all, and
+the ecs module takes the load-balancer module's outputs (target group
+ARN, ALB security group ID) as inputs. A module-level `depends_on`
+on the `ecs` module call in root `main.tf` (rather than inside the
+module itself) additionally guarantees the ALB's listener exists
+before ECS tries to register tasks against its target group — a
+dependency that can't be expressed through normal Terraform reference
+chains, since a child module can't see another module's resources
+directly, only its declared outputs.
+
+### Task execution role, not a separate task role
+ECS distinguishes between an execution role (used by the ECS agent
+itself — pulling the image, writing logs, and fetching any `secrets`
+referenced in the task definition) and a task role (used by the
+application code at runtime for its own AWS API calls). This app
+never calls AWS APIs directly — it only receives database credentials
+as plain environment variables — so only an execution role is needed.
+A common point of confusion: secrets injection permissions belong on
+the execution role, not a task role, even though "the app needs
+access to its secrets" sounds like an application-facing (task role)
+concern by name alone.
+
 ## Cost breakdown (expected)
 
 | Service | Free tier | Expected usage | Expected cost |
@@ -105,6 +135,14 @@ equivalent EC2 instances would, but not enough to offset that saving).
   one ECR repository and nothing else — cannot touch any other AWS
   resource, including this project's own database or networking.
   Container images scanned for vulnerabilities on every push.
+- Phase 4: only the ALB accepts traffic from the public internet
+  (port 80 only). ECS tasks accept traffic ONLY from the ALB's
+  security group, on the app port only — despite having public IPs,
+  they're not reachable directly from the internet. RDS accepts
+  traffic ONLY from the ECS tasks' security group. The execution
+  role's SSM/KMS permissions are scoped to exactly this project's
+  parameter path and to KMS calls made specifically via the SSM
+  service — not broad decrypt access.
 
 ## Observability posture (running list, updated per phase)
 

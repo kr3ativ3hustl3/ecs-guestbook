@@ -10,9 +10,10 @@ This is project 3 in a portfolio series:
 - [Project 2](https://github.com/kr3ativ3hustl3/vpc-guestbook) — traditional (EC2, Auto Scaling Group, VPC)
 - **Project 3 (this one)** — containers (ECS Fargate, ECR, Docker)
 
-**Status:** 🚧 In progress — Phase 3 of 6 complete (ECR + image
-build/push pipeline via GitHub Actions). No running app yet — that's
-Phase 4.
+**Status:** ✅ Core architecture complete (Phases 0-4) — the
+containerized app is live and fully functional. Phases 5-6 are
+refinements. Cost is ~$30-40/month (no NAT Gateway) — see cost note in
+docs/architecture.md; `terraform destroy` when not actively in use.
 
 ## Architecture
 
@@ -73,9 +74,9 @@ ecs-guestbook/
 - [x] **Phase 1** — Networking: VPC, public + database subnets. See [`terraform/PHASE1-networking.md`](terraform/PHASE1-networking.md).
 - [x] **Phase 2** — Database: RDS Postgres. See [`terraform/PHASE2-database.md`](terraform/PHASE2-database.md).
 - [x] **Phase 3** — ECR + GitHub OIDC + image build/push workflow. See [`terraform/PHASE3-ecr-pipeline.md`](terraform/PHASE3-ecr-pipeline.md).
-- [ ] **Phase 4** — ECS cluster, task definition, Fargate service, ALB
-- [ ] **Phase 5** — CI/CD: auto-deploy on image push
-- [ ] **Phase 6** — Final polish & write-up
+- [x] **Phase 4** — ECS cluster, task definition, Fargate service, ALB. See [`terraform/PHASE4-ecs-fargate.md`](terraform/PHASE4-ecs-fargate.md).
+- [ ] **Phase 5** — CI/CD: auto-deploy on image push (refinement)
+- [ ] **Phase 6** — Final polish & write-up (refinement)
 
 ## Troubleshooting
 
