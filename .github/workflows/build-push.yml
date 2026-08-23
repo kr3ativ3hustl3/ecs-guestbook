@@ -1,0 +1,41 @@
+name: Build and Push Image
+
+# All Docker builds happen here, on GitHub's hosted runners — never
+# locally. This dev machine's older macOS can't run current Docker
+# Desktop versions, and building in CI is arguably better practice
+# anyway: a clean, consistent environment every time, not whichever
+# laptop happens to run the command.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Log in to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        env:
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URL }}
+        run: |
+          cd app/guestbook
+          docker build -t "$ECR_REPOSITORY:latest" -t "$ECR_REPOSITORY:${{ github.sha }}" .
+          docker push "$ECR_REPOSITORY:latest"
+          docker push "$ECR_REPOSITORY:${{ github.sha }}"

@@ -59,6 +59,18 @@ in-container fetch logic needed at all. This is both simpler and a
 demonstration of a container-native pattern that has no real EC2
 equivalent.
 
+### Mutable ECR tags with an explicit "latest" + git-sha pair, not immutable per-build tags
+The more production-grade pattern tags every build with a unique
+identifier (e.g. the git commit SHA) and updates the ECS task
+definition to reference that exact tag on every deploy — giving a
+precise audit trail and trivial rollback, enforced by making tags
+IMMUTABLE so nothing can silently overwrite a previous build. This
+project uses the simpler mutable "latest" tag (with the git SHA also
+pushed alongside it, for reference) and explicitly tells ECS to
+redeploy after each push, rather than updating the task definition
+each time. Less machinery, a real tradeoff worth naming directly if
+asked — not the "best" answer, but an honest, deliberate one.
+
 ## Cost breakdown (expected)
 
 | Service | Free tier | Expected usage | Expected cost |
@@ -87,6 +99,12 @@ equivalent EC2 instances would, but not enough to offset that saving).
   database is unreachable from anything until Phase 4 explicitly
   grants ECS task access. Not publicly accessible; sits in subnets
   with no internet route at all.
+- Phase 3: GitHub Actions authenticates via the account's existing
+  OIDC provider (reused, not recreated), short-lived tokens, no static
+  AWS credentials in GitHub. Its IAM role can push images to exactly
+  one ECR repository and nothing else — cannot touch any other AWS
+  resource, including this project's own database or networking.
+  Container images scanned for vulnerabilities on every push.
 
 ## Observability posture (running list, updated per phase)
 

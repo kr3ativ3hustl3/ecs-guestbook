@@ -22,3 +22,13 @@ output "db_security_group_id" {
   description = "RDS security group ID — needed when wiring up ECS in Phase 4"
   value       = module.database.security_group_id
 }
+
+output "ecr_repository_url" {
+  description = "ECR repository URL — used by the build/push workflow and the ECS task definition"
+  value       = module.ecr.repository_url
+}
+
+output "github_actions_role_arn" {
+  description = "IAM role ARN for GitHub Actions to assume via OIDC — paste into the GitHub secret AWS_GITHUB_ACTIONS_ROLE_ARN"
+  value       = module.github_cicd.role_arn
+}

@@ -52,3 +52,21 @@ module "database" {
   db_username         = var.db_username
   db_password         = var.db_password
 }
+
+module "ecr" {
+  source = "./modules/ecr"
+
+  providers = { aws = aws }
+
+  project_name = var.project_name
+}
+
+module "github_cicd" {
+  source = "./modules/github-cicd"
+
+  providers = { aws = aws }
+
+  project_name        = var.project_name
+  github_repo         = var.github_repo
+  ecr_repository_arn  = module.ecr.repository_arn
+}
