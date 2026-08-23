@@ -83,6 +83,10 @@ equivalent EC2 instances would, but not enough to offset that saving).
   project 2. Public subnets exist for the ALB and (later) Fargate
   tasks — no NAT Gateway needed since nothing lives in a private,
   NAT-dependent subnet this time.
+- Phase 2: RDS security group created with zero inbound rules — the
+  database is unreachable from anything until Phase 4 explicitly
+  grants ECS task access. Not publicly accessible; sits in subnets
+  with no internet route at all.
 
 ## Observability posture (running list, updated per phase)
 

@@ -10,8 +10,8 @@ This is project 3 in a portfolio series:
 - [Project 2](https://github.com/kr3ativ3hustl3/vpc-guestbook) — traditional (EC2, Auto Scaling Group, VPC)
 - **Project 3 (this one)** — containers (ECS Fargate, ECR, Docker)
 
-**Status:** 🚧 In progress — Phase 1 of 6 complete (networking: VPC,
-public + database subnets, no NAT gateway).
+**Status:** 🚧 In progress — Phase 2 of 6 complete (RDS Postgres in
+isolated subnets, locked down).
 
 ## Architecture
 
@@ -70,7 +70,7 @@ ecs-guestbook/
 
 - [x] **Phase 0** — Project scaffold, Terraform state (reusing projects 1-2's backend)
 - [x] **Phase 1** — Networking: VPC, public + database subnets. See [`terraform/PHASE1-networking.md`](terraform/PHASE1-networking.md).
-- [ ] **Phase 2** — Database: RDS Postgres
+- [x] **Phase 2** — Database: RDS Postgres. See [`terraform/PHASE2-database.md`](terraform/PHASE2-database.md).
 - [ ] **Phase 3** — ECR + GitHub OIDC + image build/push workflow
 - [ ] **Phase 4** — ECS cluster, task definition, Fargate service, ALB
 - [ ] **Phase 5** — CI/CD: auto-deploy on image push
