@@ -1,4 +1,4 @@
-name: Build and Push Image
+name: Build, Push, and Deploy
 
 # All Docker builds happen here, on GitHub's hosted runners — never
 # locally. This dev machine's older macOS can't run current Docker
@@ -39,3 +39,16 @@ jobs:
           docker build -t "$ECR_REPOSITORY:latest" -t "$ECR_REPOSITORY:${{ github.sha }}" .
           docker push "$ECR_REPOSITORY:latest"
           docker push "$ECR_REPOSITORY:${{ github.sha }}"
+
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster ecs-guestbook-cluster \
+            --service ecs-guestbook-service \
+            --force-new-deployment
+
+      - name: Wait for service to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster ecs-guestbook-cluster \
+            --services ecs-guestbook-service

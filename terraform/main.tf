@@ -69,6 +69,7 @@ module "github_cicd" {
   project_name        = var.project_name
   github_repo         = var.github_repo
   ecr_repository_arn  = module.ecr.repository_arn
+  ecs_service_arn     = module.ecs.service_arn
 }
 
 module "load_balancer" {

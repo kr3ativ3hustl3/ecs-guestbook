@@ -95,3 +95,25 @@ resource "aws_iam_role_policy" "ecr_push" {
     ]
   })
 }
+
+# Lets the same CI role trigger a rolling redeploy of the ECS service
+# after pushing a new image — "deploying" here means telling ECS to
+# force new tasks, which pull the freshly-pushed :latest tag. Scoped
+# to exactly this one cluster and service.
+resource "aws_iam_role_policy" "ecs_deploy" {
+  name = "${var.project_name}-ecs-deploy"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "DeployThisServiceOnly"
+      Effect = "Allow"
+      Action = [
+        "ecs:UpdateService",
+        "ecs:DescribeServices",
+      ]
+      Resource = var.ecs_service_arn
+    }]
+  })
+}

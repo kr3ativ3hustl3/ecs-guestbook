@@ -12,3 +12,8 @@ variable "ecr_repository_arn" {
   description = "ARN of the ECR repository this role is allowed to push to (from the ecr module)"
   type        = string
 }
+
+variable "ecs_service_arn" {
+  description = "ARN of the ECS service this role is allowed to redeploy (from the ecs module)"
+  type        = string
+}

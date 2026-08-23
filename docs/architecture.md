@@ -143,6 +143,10 @@ equivalent EC2 instances would, but not enough to offset that saving).
   role's SSM/KMS permissions are scoped to exactly this project's
   parameter path and to KMS calls made specifically via the SSM
   service — not broad decrypt access.
+- Phase 5: the same GitHub Actions role from Phase 3 gains exactly
+  one more narrowly-scoped permission — redeploying this one specific
+  ECS service — rather than a new, separate role. Still cannot touch
+  networking, the database, or any other AWS resource.
 
 ## Observability posture (running list, updated per phase)
 
