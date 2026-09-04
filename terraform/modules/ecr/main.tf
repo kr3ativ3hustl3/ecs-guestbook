@@ -17,6 +17,7 @@ terraform {
 }
 
 resource "aws_ecr_repository" "app" {
+  #checkov:skip=CKV_AWS_51:MUTABLE is the deliberate, already-documented design choice explained in the comment directly below - a floating "latest" tag with explicit ECS redeploy, not an oversight.
   name = "${var.project_name}-app"
 
   # MUTABLE, not IMMUTABLE — a deliberate simplicity tradeoff. This

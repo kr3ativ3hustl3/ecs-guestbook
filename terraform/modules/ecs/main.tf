@@ -23,6 +23,7 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 resource "aws_ecs_cluster" "main" {
+  #checkov:skip=CKV_AWS_65:Container Insights has a real per-metric CloudWatch cost beyond the free tier - deferred to keep this project's cost at $0 when not actively demoed, same reasoning as RDS Enhanced Monitoring elsewhere in this series.
   name = "${var.project_name}-cluster"
 
   tags = {
@@ -31,6 +32,8 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_cloudwatch_log_group" "app" {
+  #checkov:skip=CKV_AWS_158:A Customer-Managed KMS Key costs ~$1/month - not justified for a single service's low-volume logs, out of scope for a zero-new-cost security pass.
+  #checkov:skip=CKV_AWS_338:14-day retention (not 1 year) is a deliberate cost choice - longer retention means more stored log data billable over time, unnecessary for a portfolio project's logs.
   name              = "/ecs/${var.project_name}"
   retention_in_days = 14
 
@@ -43,33 +46,43 @@ resource "aws_cloudwatch_log_group" "app" {
 # SSM Parameter Store — same pattern as project 2, but this time
 # injected natively via the task definition's `secrets` field rather
 # than fetched by a shell script at boot.
+#
+# All five parameters use SecureString, encrypted with AWS's default
+# SSM-managed KMS key (alias/aws/ssm) at no additional cost — even
+# non-secret values (host, port, name, username) get encryption at
+# rest, which costs nothing extra.
 ##############################################################################
 
 resource "aws_ssm_parameter" "db_host" {
+  #checkov:skip=CKV_AWS_337:A Customer-Managed KMS Key costs ~$1/month per key and is genuinely new infrastructure - AWS's default SecureString encryption (used here) is free and already a real hardening over the plain String type this replaced.
   name  = "/${var.project_name}/db/host"
-  type  = "String"
+  type  = "SecureString"
   value = var.db_address
 }
 
 resource "aws_ssm_parameter" "db_port" {
+  #checkov:skip=CKV_AWS_337:Same reasoning as db_host above - a CMK is a new, billable resource out of scope for this pass.
   name  = "/${var.project_name}/db/port"
-  type  = "String"
+  type  = "SecureString"
   value = tostring(var.db_port)
 }
 
 resource "aws_ssm_parameter" "db_name" {
+  #checkov:skip=CKV_AWS_337:Same reasoning as db_host above - a CMK is a new, billable resource out of scope for this pass.
   name  = "/${var.project_name}/db/name"
-  type  = "String"
+  type  = "SecureString"
   value = var.db_name
 }
 
 resource "aws_ssm_parameter" "db_username" {
+  #checkov:skip=CKV_AWS_337:Same reasoning as db_host above - a CMK is a new, billable resource out of scope for this pass.
   name  = "/${var.project_name}/db/username"
-  type  = "String"
+  type  = "SecureString"
   value = var.db_username
 }
 
 resource "aws_ssm_parameter" "db_password" {
+  #checkov:skip=CKV_AWS_337:Same reasoning as db_host above - a CMK is a new, billable resource out of scope for this pass.
   name  = "/${var.project_name}/db/password"
   type  = "SecureString"
   value = var.db_password
@@ -217,6 +230,13 @@ resource "aws_ecs_task_definition" "app" {
     image     = "${var.ecr_repository_url}:latest"
     essential = true
 
+    # Free, and verified safe: the app has no local filesystem writes
+    # anywhere (checked app.py directly) — all persistence goes to
+    # RDS, all logs go to stdout via the awslogs driver above. A
+    # container that can't write to its own root filesystem is
+    # meaningfully harder to persist a compromise in.
+    readonlyRootFilesystem = true
+
     portMappings = [{
       containerPort = 8080
       protocol      = "tcp"
@@ -246,6 +266,7 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 resource "aws_ecs_service" "app" {
+  #checkov:skip=CKV_AWS_333:Public IPs are intentional here - this project deliberately has no NAT Gateway (a documented cost tradeoff), so Fargate tasks run directly in a public subnet and need a public IP to pull images from ECR and reach the internet at all.
   name            = "${var.project_name}-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
