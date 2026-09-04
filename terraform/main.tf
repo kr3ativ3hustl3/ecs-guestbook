@@ -66,10 +66,10 @@ module "github_cicd" {
 
   providers = { aws = aws }
 
-  project_name        = var.project_name
-  github_repo         = var.github_repo
-  ecr_repository_arn  = module.ecr.repository_arn
-  ecs_service_arn     = module.ecs.service_arn
+  project_name       = var.project_name
+  github_repo        = var.github_repo
+  ecr_repository_arn = module.ecr.repository_arn
+  ecs_service_arn    = module.ecs.service_arn
 }
 
 module "load_balancer" {
@@ -93,16 +93,16 @@ module "ecs" {
   # from stabilizing correctly.
   depends_on = [module.load_balancer]
 
-  project_name           = var.project_name
-  vpc_id                 = module.networking.vpc_id
-  public_subnet_ids      = module.networking.public_subnet_ids
-  ecr_repository_url     = module.ecr.repository_url
-  db_address             = module.database.db_address
-  db_port                = module.database.db_port
-  db_name                = module.database.db_name
-  db_username            = var.db_username
-  db_password            = var.db_password
-  db_security_group_id   = module.database.security_group_id
-  alb_security_group_id  = module.load_balancer.alb_security_group_id
-  target_group_arn       = module.load_balancer.target_group_arn
+  project_name          = var.project_name
+  vpc_id                = module.networking.vpc_id
+  public_subnet_ids     = module.networking.public_subnet_ids
+  ecr_repository_url    = module.ecr.repository_url
+  db_address            = module.database.db_address
+  db_port               = module.database.db_port
+  db_name               = module.database.db_name
+  db_username           = var.db_username
+  db_password           = var.db_password
+  db_security_group_id  = module.database.security_group_id
+  alb_security_group_id = module.load_balancer.alb_security_group_id
+  target_group_arn      = module.load_balancer.target_group_arn
 }

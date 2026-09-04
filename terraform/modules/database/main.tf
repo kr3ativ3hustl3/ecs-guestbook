@@ -31,11 +31,14 @@ resource "aws_security_group" "rds" {
   description = "RDS Postgres - no inbound rules yet, added in Phase 4"
   vpc_id      = var.vpc_id
 
+  # Postgres itself needs no outbound access to function. Scoped to
+  # HTTPS only, for any engine-level features that reach out - same
+  # fix applied to vpc-guestbook's RDS security group.
   egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description = "HTTPS only"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -46,6 +49,12 @@ resource "aws_security_group" "rds" {
 }
 
 resource "aws_db_instance" "main" {
+  #checkov:skip=CKV_AWS_157:Multi-AZ intentionally disabled - doubles RDS cost with no real users to justify it for this portfolio project; documented in docs/architecture.md.
+  #checkov:skip=CKV_AWS_118:Enhanced Monitoring has a real per-metric CloudWatch cost beyond the free tier - deferred to keep this project's cost at $0 when not actively demoed.
+  #checkov:skip=CKV_AWS_161:IAM database authentication would require the application itself to generate IAM auth tokens instead of a static password - an app-code change beyond this security-scanning pass's scope, tracked as a follow-up.
+  #checkov:skip=CKV_AWS_129:Exporting logs to CloudWatch Logs incurs real ingestion/storage cost - deferred to avoid introducing a new billable destination.
+  #checkov:skip=CKV_AWS_293:Deletion protection would block this project's established terraform destroy-after-verification workflow, used specifically to keep AWS costs at zero between work sessions.
+  #checkov:skip=CKV_AWS_354:Performance Insights (enabled below, free for the standard 7-day retention) defaults to AWS's managed key for encryption - a Customer-Managed Key costs ~$1/month and is new infrastructure, out of scope for this pass.
   identifier     = "${var.project_name}-db"
   engine         = "postgres"
   engine_version = "16.4"
@@ -53,6 +62,15 @@ resource "aws_db_instance" "main" {
 
   allocated_storage = 20
   storage_type      = "gp2"
+
+  # Encryption at rest via the AWS-managed default RDS key - free.
+  storage_encrypted = true
+
+  # Explicit, not relying on the provider default.
+  auto_minor_version_upgrade = true
+
+  # Free for the standard 7-day retention window on RDS Postgres.
+  performance_insights_enabled = true
 
   db_name  = "guestbook"
   username = var.db_username

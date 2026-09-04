@@ -19,12 +19,25 @@ terraform {
 }
 
 resource "aws_vpc" "main" {
+  #checkov:skip=CKV2_AWS_11:VPC Flow Logs require a new destination (S3 or CloudWatch Logs) - genuinely new infrastructure with real storage cost, out of scope for a zero-new-infrastructure security pass.
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = {
     Name    = "${var.project_name}-vpc"
+    Project = var.project_name
+  }
+}
+
+# Locks the VPC's implicit default security group to deny all traffic
+# — free, zero new resources, and good practice since every real
+# resource here uses its own purpose-built security group instead.
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name    = "${var.project_name}-default-sg-locked"
     Project = var.project_name
   }
 }
@@ -39,6 +52,7 @@ resource "aws_internet_gateway" "main" {
 }
 
 resource "aws_subnet" "public" {
+  #checkov:skip=CKV_AWS_130:Auto-assigned public IPs are intentional here - this project deliberately has no NAT Gateway (a documented cost tradeoff), so ECS Fargate tasks run directly in this public subnet and need a public IP to pull images from ECR and reach the internet at all.
   count                   = length(var.availability_zones)
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.public_subnet_cidrs[count.index]

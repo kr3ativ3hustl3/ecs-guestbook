@@ -36,6 +36,13 @@ resource "aws_ecr_repository" "app" {
     scan_on_push = true
   }
 
+  # Encrypted using AWS's default ECR-managed KMS key - free, no
+  # per-key charge like a Customer-Managed Key would have. A genuine
+  # upgrade over the previous default (AES256) at no cost.
+  encryption_configuration {
+    encryption_type = "KMS"
+  }
+
   tags = {
     Name    = "${var.project_name}-app"
     Project = var.project_name

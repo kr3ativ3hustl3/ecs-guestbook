@@ -130,9 +130,9 @@ resource "aws_iam_role_policy" "read_db_params" {
         Resource = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/db/*"
       },
       {
-        Sid    = "DecryptSecureStringParameter"
-        Effect = "Allow"
-        Action = ["kms:Decrypt"]
+        Sid      = "DecryptSecureStringParameter"
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
         Resource = "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/*"
         Condition = {
           StringEquals = {
@@ -154,11 +154,23 @@ resource "aws_security_group" "ecs_tasks" {
   description = "ECS Fargate tasks - only accepts traffic from the ALB"
   vpc_id      = var.vpc_id
 
+  # Scoped to what a Fargate task actually needs outbound: HTTPS for
+  # pulling images from ECR, sending logs to CloudWatch, and reading
+  # secrets from SSM Parameter Store, plus Postgres to reach RDS.
+  # Previously an unrestricted "-1/all ports" rule.
   egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description = "HTTPS - ECR, CloudWatch, SSM"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Postgres to RDS"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
